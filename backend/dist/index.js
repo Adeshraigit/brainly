@@ -15,15 +15,15 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const express_1 = __importDefault(require("express"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const db_1 = require("./db");
-const JWT_SECRET = "!secret";
+const config_1 = require("./config");
+const middleware_1 = require("./middleware");
 const app = (0, express_1.default)();
 app.use(express_1.default.json());
 app.get("/", (req, res) => {
     res.send("Hello World");
 });
 app.post("/api/v1/signup", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const username = req.body.username;
-    const password = req.body.password;
+    const { username, password } = req.body;
     try {
         yield db_1.UserModel.create({
             username: username,
@@ -40,8 +40,7 @@ app.post("/api/v1/signup", (req, res) => __awaiter(void 0, void 0, void 0, funct
     }
 }));
 app.post("/api/v1/signin", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const username = req.body.username;
-    const password = req.body.password;
+    const { username, password } = req.body;
     const existingUser = yield db_1.UserModel.findOne({
         username: username,
         password: password
@@ -49,7 +48,7 @@ app.post("/api/v1/signin", (req, res) => __awaiter(void 0, void 0, void 0, funct
     if (existingUser) {
         const token = jsonwebtoken_1.default.sign({
             id: existingUser._id
-        }, JWT_SECRET);
+        }, config_1.JWT_SECRET);
         res.json({
             token
         });
@@ -60,12 +59,50 @@ app.post("/api/v1/signin", (req, res) => __awaiter(void 0, void 0, void 0, funct
         });
     }
 }));
-app.post("/api/v1/content", (req, res) => {
-});
-app.get("/api/v1/content", (req, res) => {
-});
-app.delete("/api/v1/content", (req, res) => {
-});
+app.post("/api/v1/content", middleware_1.userMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { link, title } = req.body;
+    try {
+        yield db_1.ContentModel.create({
+            title: title,
+            link: link,
+            // @ts-ignore   
+            userId: req.userId,
+            tags: []
+        });
+        res.status(200).json({ message: "Content Added" });
+    }
+    catch (e) {
+        console.log("Error Adding Content", e);
+        res.status(500).json({ message: "Error Adding Content" });
+    }
+}));
+app.get("/api/v1/content", middleware_1.userMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    //@ts-ignore   
+    const userId = req.userId;
+    try {
+        const content = yield db_1.ContentModel.find({ userId: userId }).populate("userId", "username");
+        res.status(200).json(content);
+    }
+    catch (e) {
+        console.log("Error Fetching Content", e);
+        res.status(500).json({ message: "Error Fetching Content" });
+    }
+}));
+app.delete("/api/v1/content", middleware_1.userMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const contentId = req.body.id;
+    try {
+        yield db_1.ContentModel.deleteMany({
+            contentId,
+            //@ts-ignore    
+            userId: req.userId
+        });
+        res.status(200).json({ message: "Content Deleted" });
+    }
+    catch (e) {
+        console.log("Error Deleting Content", e);
+        res.status(500).json({ message: "Error Deleting Content" });
+    }
+}));
 app.post("/api/v1/brain/share", (req, res) => {
 });
 app.get("/api/v1/brain/:shareLink", (req, res) => {
