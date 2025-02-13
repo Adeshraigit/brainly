@@ -17,6 +17,7 @@ const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const db_1 = require("./db");
 const config_1 = require("./config");
 const middleware_1 = require("./middleware");
+const utils_1 = require("./utils");
 const app = (0, express_1.default)();
 app.use(express_1.default.json());
 app.get("/", (req, res) => {
@@ -103,10 +104,67 @@ app.delete("/api/v1/content", middleware_1.userMiddleware, (req, res) => __await
         res.status(500).json({ message: "Error Deleting Content" });
     }
 }));
-app.post("/api/v1/brain/share", (req, res) => {
-});
-app.get("/api/v1/brain/:shareLink", (req, res) => {
-});
+app.post("/api/v1/brain/share", middleware_1.userMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const { share } = req.body;
+    const existingLink = yield db_1.LinkModel.findOne({
+        // @ts-ignore       
+        userId: req.userId
+    });
+    if (existingLink) {
+        res.json({
+            link: existingLink.hash
+        });
+        return;
+    }
+    if (share) {
+        const hash = (0, utils_1.random)(10);
+        yield db_1.LinkModel.create({
+            hash: hash,
+            // @ts-ignore   
+            userId: req.userId,
+        });
+        res.json({
+            hash: hash
+        });
+    }
+    else {
+        yield db_1.LinkModel.deleteOne({
+            // @ts-ignore   
+            userId: req.userId
+        });
+        res.json({
+            message: "Removed link"
+        });
+    }
+}));
+app.get("/api/v1/brain/:shareLink", (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    const hash = req.params.shareLink;
+    const link = yield db_1.LinkModel.findOne({
+        hash: hash
+    });
+    if (!link) {
+        res.status(411).json({
+            message: "Invalid Link"
+        });
+        return;
+    }
+    const content = yield db_1.ContentModel.find({
+        userId: link.userId
+    });
+    const user = yield db_1.UserModel.findOne({
+        _id: link.userId
+    });
+    if (!user) {
+        res.status(411).json({
+            message: "User not found"
+        });
+        return;
+    }
+    res.status(200).json({
+        username: user === null || user === void 0 ? void 0 : user.username,
+        content: content
+    });
+}));
 app.listen(3000, () => {
     console.log("Server is running on port 3000");
 });
