@@ -3,7 +3,10 @@ import { ReactElement } from "react";
 interface ButtonProps {
     variant: "primary" | "secondary";
     text: string;
-    starIcon: ReactElement;
+    starIcon?: ReactElement;
+    onClick? : () => void;
+    fullWidth?: boolean;
+    loading?: boolean;
 }
 
 const variantsClasses = {
@@ -13,9 +16,9 @@ const variantsClasses = {
 
 const defaultStyles = "px-4 py-2 rounded-md font-light flex items-center" 
 
-export function Button({variant, text, starIcon}: ButtonProps) {
+export function Button({variant, text, starIcon, onClick, fullWidth, loading}: ButtonProps) {
 
-    return <button className={variantsClasses[variant] + " " + defaultStyles } >
+    return <button onClick={onClick} className={variantsClasses[variant] + " " + defaultStyles + `${fullWidth ? " w-full flex justify-center items-center" : ""} ${loading ? "opacity-45" : ""}`} disabled={loading} >
         <div className="pr-2" >
             {starIcon}
         </div>
