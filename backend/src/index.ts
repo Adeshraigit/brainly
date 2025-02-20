@@ -4,12 +4,17 @@ import { UserModel, ContentModel, LinkModel } from "./db";
 import { JWT_SECRET } from "./config";      
 import { userMiddleware } from "./middleware";
 import { random } from "./utils";
+import cors from "cors" 
 
 const app = express()
 app.use(express.json())
+app.use(cors({
+    origin: "http://localhost:5173",
+    credentials: true
+}))
 
 app.get("/", (req, res) => {
-    res.send("Hello World")
+    res.send("Hello World1")
 })
 
 app.post("/api/v1/signup", async (req, res) => {
