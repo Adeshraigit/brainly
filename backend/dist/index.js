@@ -21,7 +21,10 @@ const utils_1 = require("./utils");
 const cors_1 = __importDefault(require("cors"));
 const app = (0, express_1.default)();
 app.use(express_1.default.json());
-app.use((0, cors_1.default)());
+app.use((0, cors_1.default)({
+    origin: "http://localhost:5173",
+    credentials: true
+}));
 app.get("/", (req, res) => {
     res.send("Hello World1");
 });
@@ -63,11 +66,12 @@ app.post("/api/v1/signin", (req, res) => __awaiter(void 0, void 0, void 0, funct
     }
 }));
 app.post("/api/v1/content", middleware_1.userMiddleware, (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    const { link, title } = req.body;
+    const { link, title, type } = req.body;
     try {
         yield db_1.ContentModel.create({
             title: title,
             link: link,
+            type: type,
             // @ts-ignore   
             userId: req.userId,
             tags: []
